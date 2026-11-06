@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOTCOIN</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#10131b;
+ color:white;
+ font-family:Arial,sans-serif;
+ padding:20px;
+}
+.container{max-width:450px;margin:auto}
+header{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ font-size:22px;
+ font-weight:bold;
+ color:#f5c451;
+ margin:20px 0 40px;
+}
+.logo{
+ background:#f5c451;
+ color:#111;
+ padding:12px;
+ border-radius:12px;
+}
+.card{
+ background:#1b2431;
+ border:1px solid #303b4b;
+ border-radius:18px;
+ padding:22px;
+ margin-bottom:18px;
+}
+.center{text-align:center}
+.label{color:#9aa7b8;font-size:13px}
+.balance{
+ font-size:43px;
+ font-weight:bold;
+ color:#f5c451;
+ margin:15px 0;
+}
+button{
+ width:100%;
+ padding:15px;
+ border:0;
+ border-radius:12px;
+ background:#f5c451;
+ color:#111;
+ font-size:16px;
+ font-weight:bold;
+ margin-top:15px;
+}
+button:active{opacity:.8}
+.progress{
+ height:10px;
+ background:#10131b;
+ border-radius:20px;
+ margin:18px 0;
+ overflow:hidden;
+}
+.bar{
+ height:100%;
+ width:0;
+ background:#f5c451;
+}
+.grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:12px;
+}
+.stat{
+ background:#121923;
+ padding:15px;
+ border-radius:12px;
+}
+.stat strong{
+ display:block;
+ margin-top:10px;
+ font-size:20px;
+}
+.nav{
+ display:flex;
+ justify-content:space-around;
+ margin-top:25px;
+}
+.nav button{
+ background:#202938;
+ color:white;
+ font-size:12px;
+ padding:12px 5px;
+}
+.note{
+ color:#9aa7b8;
+ font-size:11px;
+ line-height:1.5;
+ margin-top:25px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<header>
+<div class="logo">D</div>
+<div>DOTCOIN</div>
+</header>
+
+<div class="card center">
+<div class="label">YOUR TOTAL BALANCE</div>
+<div class="balance" id="balance">0.00</div>
+<div class="label">DOT POINTS</div>
+</div>
+
+<div class="card">
+<h3>⚡ Automatic Mining</h3>
+<p class="label">Mining speed: 100 DOT / hour</p>
+
+<div class="progress">
+<div class="bar" id="bar"></div>
+</div>
+
+<p class="label" id="status">
+Your mining is active.
+</p>
+
+<button onclick="collect()">
+Collect Points
+</button>
+</div>
+
+<div class="grid">
+<div class="stat">
+<span class="label">Today's Earnings</span>
+<strong id="today">0.00</strong>
+</div>
+
+<div class="stat">
+<span class="label">Mining Rate</span>
+<strong>100 DOT</strong>
+</div>
+</div>
+
+<div class="card">
+<h3>🎁 Daily Rewards</h3>
+<p class="label">Collect your daily bonus.</p>
+<button onclick="daily()">Claim 250 DOT</button>
+</div>
+
+<div class="card">
+<h3>👥 Invite Friends</h3>
+<p class="label">Invite friends to join DOTCOIN.</p>
+<button onclick="invite()">Invite Friends</button>
+</div>
+
+<div class="card">
+<h3>👛 My Wallet</h3>
+<div class="balance" id="wallet">0.00</div>
+<p class="label">Your DOT points balance.</p>
+</div>
+
+<div class="note">
+DOTCOIN currently uses simulated in-app
+points. These points are not cryptocurrency
+and have no cash or withdrawal value.
+</div>
+
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){
+ tg.ready();
+ tg.expand();
+}
+
+const user = tg?.initDataUnsafe?.user;
+const key = "dotcoin_" + (user?.id || "demo");
+
+let data;
+
+try{
+ data = JSON.parse(localStorage.getItem(key)) || {};
+}catch(e){
+ data = {};
+}
+
+data.balance = data.balance || 0;
+data.today = data.today || 0;
+data.last = data.last || Date.now();
+data.day = data.day || new Date().toDateString();
+data.daily = data.daily || "";
+
+function save(){
+ localStorage.setItem(key,JSON.stringify(data));
+}
+
+function accrue(){
+ let now = Date.now();
+
+ if(data.day !== new Date().toDateString()){
+  data.day = new Date().toDateString();
+  data.today = 0;
+ }
+
+ let elapsed = Math.max(
+  0,
+  Math.min(now-data.last,86400000)
+ );
+
+ let earned = elapsed * (100/3600000);
+
+ data.balance += earned;
+ data.today += earned;
+ data.last = now;
+
+ save();
+}
+
+function render(){
+ accrue();
+
+ document.getElementById("balance").textContent =
+ data.balance.toFixed(2);
+
+ document.getElementById("wallet").textContent =
+ data.balance.toFixed(2);
+
+ document.getElementById("today").textContent =
+ data.today.toFixed(2);
+
+ document.getElementById("bar").style.width =
+ ((Date.now()%86400000)/86400000*100)+"%";
+}
+
+function collect(){
+ render();
+ alert("Your available points are included in your balance!");
+}
+
+function daily(){
+ let today = new Date().toDateString();
+
+ if(data.daily === today){
+  alert("You have already collected today's reward!");
+  return;
+ }
+
+ data.balance += 250;
+ data.today += 250;
+ data.daily = today;
+
+ save();
+ render();
+
+ alert("250 DOT points added!");
+}
+
+function invite(){
+ let id = user?.id || "demo";
+ let link = "https://t.me/Dotcoin_EarningBot?start=ref_"+id;
+
+ if(tg){
+  tg.openTelegramLink(
+   "https://t.me/share/url?url="+encodeURIComponent(link)
+  );
+ }else{
+  prompt("Copy your invitation link:",link);
+ }
+}
+
+render();
+setInterval(render,1000);
+</script>
+
+</body>
+</html>
