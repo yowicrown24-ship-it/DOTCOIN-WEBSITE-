@@ -1,0 +1,3 @@
+[build]
+  # Static site: index.html lives at the repository root, no build step needed.
+  publish = "."
